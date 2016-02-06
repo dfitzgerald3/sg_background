@@ -51,7 +51,7 @@ for i in range(len(stats)):
         f = web.DataReader(stats.index[i], 'yahoo', start, end, retry_count=10, pause=0.5)    
         
         c.execute("INSERT INTO daily (date, symbol, open, close, high, low, sentiment, volume) values (%s, %s, %s, %s, %s, %s, %s, %s)", 
-              (unix_now, stats.index[i], f['Open'], f['Close'], f['High'], f['Low'], stats['mean'][i], stats['count'][i]))
+              (unix_now, stats.index[i], f['Open'].values[0], f['Close'].values[0], f['High'].values[0], f['Low'].values[0], stats['mean'][i], stats['count'][i]))
     except Exception:
         continue
     
