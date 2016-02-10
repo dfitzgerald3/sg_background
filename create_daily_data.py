@@ -8,11 +8,12 @@ import datetime
 
 
 #Query MySQL and find values within that last day
-time_greater_than = datetime.datetime.now() - datetime.timedelta(days=1)
-unix_time_greater_than = time.mktime(time_greater_than.timetuple())
+time_after = datetime.datetime.now() - datetime.timedelta(days=1)
+time_after = datetime.datetime(time_after.year, time_after.month, time_after.day)
+unix_time_after = time.mktime(time_after.timetuple())
 
 c, conn = connection()
-c.execute("SELECT * FROM sentiment WHERE time > %s", (unix_time_greater_than,))
+c.execute("SELECT * FROM sentiment WHERE time > %s", (unix_time_after,))
 data = c.fetchall()
 
 
@@ -45,14 +46,14 @@ unix_now = time.mktime(now_daily.timetuple())
 #Retrieve financial data for stocks
 start = now_daily
 end = now_daily
-
-for i in range(len(stats)):
-    try:
-        f = web.DataReader(stats.index[i], 'yahoo', start, end, retry_count=10, pause=0.5)    
+if start.weekday() < 5:
+    for i in range(len(stats)):
+        try:
+            f = web.DataReader(stats.index[i], 'yahoo', start, end, retry_count=10, pause=0.5)    
+            
+            c.execute("INSERT INTO daily (date, symbol, open, close, high, low, sentiment, volume) values (%s, %s, %s, %s, %s, %s, %s, %s)", 
+                  (unix_now, stats.index[i], f['Open'].values[0], f['Close'].values[0], f['High'].values[0], f['Low'].values[0], stats['mean'][i], stats['count'][i]))
+        except Exception:
+            continue
         
-        c.execute("INSERT INTO daily (date, symbol, open, close, high, low, sentiment, volume) values (%s, %s, %s, %s, %s, %s, %s, %s)", 
-              (unix_now, stats.index[i], f['Open'].values[0], f['Close'].values[0], f['High'].values[0], f['Low'].values[0], stats['mean'][i], stats['count'][i]))
-    except Exception:
-        continue
-    
-conn.commit()
+    conn.commit()
